@@ -1,4 +1,4 @@
-function displayMessage(term){
-	console.log(term);
+function displayMessage (term) {
+  console.log(term);
 }
 module.exports = displayMessage;
