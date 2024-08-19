@@ -1,7 +1,7 @@
 # Learning Objectives
 ## At the end of this project, I'm expected to be able to explain to anyone, without the help of Google the following:
 
-    ->run javascript using NodeJS
+    -> run javascript using NodeJS
     -> use NodeJS modules
     -> use specific Node JS module to read files
     -> use process to access command line arguments and the environment
