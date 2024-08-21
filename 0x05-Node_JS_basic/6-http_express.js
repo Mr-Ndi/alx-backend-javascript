@@ -1,8 +1,11 @@
 const express = require('express');
+
 const app = express();
-app.listen(1245);
+const port = 1245;
 
 app.get('/', (req, res) => {
-	console.log('Hello Holberton School!');
+  res.send('Hello Holberton School!');
 });
+
+app.listen(port, () => {});
 module.exports = app;
