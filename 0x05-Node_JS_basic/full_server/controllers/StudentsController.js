@@ -1,57 +1,74 @@
-const { readDatabase } = require('../utils'); // Adjust the path as necessary
+import readDatabase from '../utils';
 
+/**
+ * The list of supported majors.
+ */
+const VALID_MAJORS = ['CS', 'SWE'];
+
+/**
+ * Contains the student-related route handlers.
+ *
+ */
 class StudentsController {
-    static async getAllStudents(request, response) {
-        try {
-            const students = await readDatabase();
-            const fields = {};
+  static getAllStudents(request, response) {
+    const dataPath = process.argv.length > 2 ? process.argv[2] : '';
 
-            // Organize students by their major
-            students.forEach(student => {
-                const major = student.major.toLowerCase(); // Case insensitive
-                if (!fields[major]) {
-                    fields[major] = [];
-                }
-                fields[major].push(student.firstName);
-            });
+    readDatabase(dataPath)
+      .then((studentGroups) => {
+        const responseParts = ['This is the list of our students'];
+        // A comparison function for ordering a list of strings in ascending
+        // order by alphabetic order and case insensitive
+        const cmpFxn = (a, b) => {
+          if (a[0].toLowerCase() < b[0].toLowerCase()) {
+            return -1;
+          }
+          if (a[0].toLowerCase() > b[0].toLowerCase()) {
+            return 1;
+          }
+          return 0;
+        };
 
-            // Prepare the response
-            let result = "This is the list of our students\n";
-            for (const [field, names] of Object.entries(fields)) {
-                result += `Number of students in ${field.toUpperCase()}: ${names.length}. List: ${names.join(', ')}\n`;
-            }
-
-            // Send the response with status 200
-            response.status(200).send(result.trim());
-        } catch (error) {
-            // Handle database read error
-            response.status(500).send("Cannot load the database");
+        for (const [field, group] of Object.entries(studentGroups).sort(cmpFxn)) {
+          responseParts.push([
+            `Number of students in ${field}: ${group.length}.`,
+            'List:',
+            group.map((student) => student.firstname).join(', '),
+          ].join(' '));
         }
+        response.status(200).send(responseParts.join('\n'));
+      })
+      .catch((err) => {
+        response
+          .status(500)
+          .send(err instanceof Error ? err.message : err.toString());
+      });
+  }
+
+  static getAllStudentsByMajor(request, response) {
+    const dataPath = process.argv.length > 2 ? process.argv[2] : '';
+    const { major } = request.params;
+
+    if (!VALID_MAJORS.includes(major)) {
+      response.status(500).send('Major parameter must be CS or SWE');
+      return;
     }
+    readDatabase(dataPath)
+      .then((studentGroups) => {
+        let responseText = '';
 
-    static async getAllStudentsByMajor(request, response) {
-        const major = request.query.major; // Get the major from query parameters
-
-        // Validate the major parameter
-        if (major !== 'CS' && major !== 'SWE') {
-            return response.status(500).send("Major parameter must be CS or SWE");
+        if (Object.keys(studentGroups).includes(major)) {
+          const group = studentGroups[major];
+          responseText = `List: ${group.map((student) => student.firstname).join(', ')}`;
         }
-
-        try {
-            const students = await readDatabase();
-            const filteredStudents = students.filter(student => student.major === major);
-
-            // Prepare the response
-            const firstNames = filteredStudents.map(student => student.firstName);
-            const result = `List: ${firstNames.join(', ')}`;
-
-            // Send the response with status 200
-            response.status(200).send(result);
-        } catch (error) {
-            // Handle database read error
-            response.status(500).send("Cannot load the database");
-        }
-    }
+        response.status(200).send(responseText);
+      })
+      .catch((err) => {
+        response
+          .status(500)
+          .send(err instanceof Error ? err.message : err.toString());
+      });
+  }
 }
 
+export default StudentsController;
 module.exports = StudentsController;
