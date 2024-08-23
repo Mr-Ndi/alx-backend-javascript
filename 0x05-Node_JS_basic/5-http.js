@@ -1,9 +1,3 @@
-/*
- * Set the response header to indicate plain text
- * Send the response body
- * listening to the port 1245
- */
-
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
@@ -23,11 +17,6 @@ async function countStudents(filePath) {
       }
     });
 
-    console.log(`Number of students: ${students.length - 1}`);
-    Object.keys(fields).forEach((key) => {
-      console.log(`Number of students in ${key}: ${fields[key].length}. List: ${fields[key].join(', ')}`);
-    });
-
     return {
       total: students.length - 1,
       fields
@@ -39,11 +28,18 @@ async function countStudents(filePath) {
 
 const app = http.createServer(async (req, res) => {
   const url = req.url;
+  const filePath = process.argv[2];
+
   if (url === '/') {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
     res.end('Hello Holberton School!\n');
+
   } else if (url === '/students') {
-    const filePath = path.join(__dirname, 'database.csv');
+    if (!filePath) {
+      res.writeHead(400, { 'Content-Type': 'text/plain' });
+      res.end('Database file path is required\n');
+      return;
+    }
     try {
       const { total, fields } = await countStudents(filePath);
       let response = `This is the list of our students\nNumber of students: ${total}\n`;
@@ -54,7 +50,7 @@ const app = http.createServer(async (req, res) => {
       res.end(response);
     } catch (error) {
       res.writeHead(500, { 'Content-Type': 'text/plain' });
-      res.end('Error reading students data\n');
+      res.end('Cannot load the database\n');
     }
   } else {
     res.writeHead(404, { 'Content-Type': 'text/plain' });
@@ -62,6 +58,8 @@ const app = http.createServer(async (req, res) => {
   }
 });
 
-app.listen(1245);
+app.listen(1245, () => {
+  console.log('Server is listening on http://localhost:1245');
+});
 
 module.exports = app;
